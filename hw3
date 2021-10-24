@@ -1,0 +1,150 @@
+<HTML>
+<BODY>
+<canvas id="lab3" width="800" height="800" style='border:5px solid #9c1046'>
+</canvas>
+<script>
+    function DrawLine(ctx, x0, y0, x1, y1) {
+    var dy = Math.abs(y1 - y0);
+    var dx = Math.abs(x1 - x0);
+    var dmax = Math.max(dx, dy);
+    var dmin = Math.min(dx, dy);
+    var xdir = 1;
+    if (x1 < x0) xdir = -1;
+    var ydir = 1;
+    if (y1 < y0) ydir = -1;
+    var eps = 0;
+    var s = 1;
+    var k = 2 * dmin;
+    if (dy <= dx) {
+        var y = y0;
+        for (var x = x0; x * xdir <= x1 * xdir; x += xdir) {
+            ctx.fillRect(x * s, y * s, 1 * s, 1 * s);
+            eps = eps + k;
+            if (eps > dmax) {
+                y += ydir;
+                eps = eps - 2 * dmax;
+            }
+        }
+    } else {
+        var x = x0;
+        for (var y = y0; y * ydir <= y1 * ydir; y += ydir) {
+            ctx.fillRect(x * s, y * s, 1 * s, 1 * s);
+            eps = eps + k;
+            if (eps > dmax) {
+                x += xdir;
+                eps = eps - 2 * dmax;
+            }
+        }
+    }
+}
+</script>
+<script>
+    var canvas = document.getElementById("lab3");
+    var ctx = canvas.getContext("2d");
+
+    var state = 0;
+    var polygon_start_x_tmp, polygon_start_y_tmp;
+    var polygon_start_x, polygon_start_y;
+    var polygon_end_x, polygon_end_y;
+    var line_start_x, line_start_y;
+    var line_end_x, line_end_y;
+    var polygon_lines = new Map()
+
+    canvas.addEventListener("click", function (event) {
+        if (state == 0) {
+            polygon_start_x_tmp = event.offsetX;
+            polygon_start_y_tmp = event.offsetY;
+            polygon_start_x = event.offsetX;
+            polygon_start_y = event.offsetY;
+            state = 1;
+        } else if (state == 1) {
+            polygon_end_x = event.offsetX;
+            polygon_end_y = event.offsetY;
+            DrawLine(ctx, polygon_start_x_tmp, polygon_start_y_tmp, polygon_end_x, polygon_end_y);
+            polygon_lines.set([polygon_start_x_tmp, polygon_start_y_tmp], [polygon_end_x, polygon_end_y]);
+            polygon_start_x_tmp = event.offsetX;
+            polygon_start_y_tmp = event.offsetY;
+            state = 1;
+        } else if (state == 2) {
+            line_start_x = event.offsetX;
+            line_start_y = event.offsetY;
+            state = 3;
+        } else if (state == 3) {
+            line_end_x = event.offsetX;
+            line_end_y = event.offsetY;
+            ctx.fillStyle = "#bb7700"
+            var t1 = -1, t2 = -1;
+            var key_start = -1, key_end = -1;
+            DrawLine(ctx, line_start_x, line_start_y, line_end_x, line_end_y);
+            console.log('---------------------------------------------------------------------------------')
+            for (var key of polygon_lines.keys()) {
+                console.log('in loop, key = ' + key + ' map[key]' + polygon_lines.get(key));
+                if (t1 === -1) {
+                    t1 = ((line_start_y - line_end_y) * (key[0] - line_start_x) + (line_end_x - line_start_x)
+                        * (key[1] - line_start_y)) / ((polygon_lines.get(key)[0] - key[0])
+                        * (line_end_y - line_start_y) + (polygon_lines.get(key)[1] - key[1]) * (line_start_x - line_end_x));
+                    key_start = key;
+                    console.log('t1= ' + t1 + 'key= ' + key);
+                    if (t1 > 1 || t1 < 0) {
+                        t1 = -1
+                    } else {
+                        continue
+                    }
+                }
+                if (t2 === -1) {
+                    t2 = ((line_start_y - line_end_y) * (key[0] - line_start_x) + (line_end_x - line_start_x)
+                        * (key[1] - line_start_y)) / ((polygon_lines.get(key)[0] - key[0])
+                        * (line_end_y - line_start_y) + (polygon_lines.get(key)[1] - key[1]) * (line_start_x - line_end_x));
+                    key_end = key;
+                    console.log('t2= ' + t2 + 'key= ' + key);
+                    if (t2 > 1 || t2 < 0) {
+                        t2 = -1
+                        continue;
+                    }
+                }
+                if (t1 <= 1 && t1 >= 0 && t2 <= 1 && t2 >= 0) {
+                    var eraser_start_x = (polygon_lines.get(key_start)[0] - key_start[0]) * t1 + key_start[0];
+                    var eraser_start_y = (polygon_lines.get(key_start)[1] - key_start[1]) * t1 + key_start[1];
+                    var eraser_end_x = (polygon_lines.get(key_end)[0] - key_end[0]) * t2 + key_end[0];
+                    var eraser_end_y = (polygon_lines.get(key_end)[1] - key_end[1]) * t2 + key_end[1];
+                    console.log('x_start = ' + eraser_start_x + ' y_start = ' + eraser_start_y +
+                        ' x_end = ' + eraser_end_x + ' y_end = ' + eraser_end_y)
+                    ctx.fillStyle = "#ffffff";
+                    for (var i = 0; i < 10; i += 1) {
+                        DrawLine(ctx, eraser_start_x, eraser_start_y, eraser_end_x, eraser_end_y);
+                    }
+                    ctx.fillStyle = "#000000"
+                    DrawLine(ctx, polygon_lines.get(key_start)[0], polygon_lines.get(key_start)[1], key_start[0], key_start[1])
+                    ctx.fillStyle = "#bb7700";
+                    break;
+                }
+            }
+            state = 2;
+        }
+
+    });
+    </script>
+    <script>
+    var canvas = document.getElementById("lab3");
+    var state = 0;
+    var polygon_start_x_tmp, polygon_start_y_tmp;
+    var polygon_start_x, polygon_start_y;
+    var polygon_end_x, polygon_end_y;
+    var line_start_x, line_start_y;
+    var line_end_x, line_end_y;
+    var polygon_lines = new Map()
+
+    canvas.addEventListener('contextmenu', function (event) {
+        if (state == 1) {
+            DrawLine(ctx, polygon_start_x_tmp, polygon_start_y_tmp, polygon_start_x, polygon_start_y);
+            console.log(polygon_start_x_tmp, polygon_start_y_tmp, polygon_start_x, polygon_start_y);
+            polygon_lines.set([polygon_start_x_tmp, polygon_start_y_tmp], [polygon_start_x, polygon_start_y])
+            console.log(polygon_lines);
+            state = 2;
+        } else {
+            console.log("c_X = " + event.offsetX + ' c_Y= ' + event.offsetY)
+        }
+    });
+    </script>
+</BODY>
+</html>
