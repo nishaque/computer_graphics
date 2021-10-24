@@ -1,0 +1,104 @@
+<HTML>
+
+<BODY>
+
+    <canvas id='hw_01/02' width='600px' height='600px'>
+    </canvas>
+    <div style="position:absolute; top:499px; left:137px; ">
+        <canvas width="230px" height='50px' style='border:3px solid black' fill="purple">
+        </canvas>
+
+    <script>
+        function draw_line_bresenham(context, x0, y0, x1, y1, colour) {
+
+            ctx.fillStyle = colour;
+            let x = x0;
+            let y = y0;
+            let epsilon = 0;
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+            let sign_x = Math.sign(dx);
+            let sign_y = Math.sign(dy);
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                while (x != x1) {
+                    epsilon += 2 * dy;
+                    if (Math.abs(epsilon) >= Math.abs(dx)) {
+                        y += sign_y;
+                        epsilon -= 2 * sign_x * sign_y * dx;
+                    }
+                    context.fillRect(x, y, 1, 1);
+                    x += sign_x;
+                }
+            } else {
+                while (y != y1) {
+                    epsilon += 2 * dx;
+                    if (Math.abs(epsilon) >= Math.abs(dy)) {
+                        epsilon -= 2 * sign_x * sign_y * dy;
+                        x += sign_x;
+                    }
+                    context.fillRect(x, y, 1, 1);
+                    y += sign_y;
+                }
+            }
+        }
+    </script>
+
+    <script>
+        function draw_circle_bresenham(x, y, radius) {
+
+            let x0 = 0;
+            let y0 = radius;
+            let error = 0;
+            let delta = (2 - 2 * radius);
+
+            while (y0 >= 0) {
+                error = 2 * (delta + y0) - 1;
+                ctx.fillRect(x + x0, y - y0, 1, 1);
+                ctx.fillRect(x - x0, y - y0, 1, 1);
+                ctx.fillRect(x - x0, y + y0, 1, 1);
+                ctx.fillRect(x + x0, y + y0, 1, 1);
+                if (delta < 0 && error <= 0) {
+                    x0++;
+                    delta += 2 * x0 + 1;
+                    continue;
+                }
+                if (delta > 0 && error > 0) {
+                    y0--;
+                    delta -= 2 * y0 + 1;
+                    continue;
+                }
+                x0++;
+                delta += 2 * (x0 - y0);
+                y0--;
+            }
+        }
+    </script>
+
+    <script>
+        function rotation(context, x0, y0, radius) {
+            let degree = ((new Date()).getSeconds() * 6 - 90) % 360;
+            let x1 = Math.abs(Math.trunc(x0 + radius * Math.cos(degree * Math.PI / 180)));
+            let y1 = Math.abs(Math.trunc(y0 + radius * Math.sin(degree * Math.PI / 180)));
+            draw_line_bresenham(context, x0, y0, x1, y1, '#870050');
+
+            degree = (((new Date()).getSeconds() - 1) * 6 - 90) % 360;
+            x1 = Math.abs(Math.trunc(x0 + radius * Math.cos(degree * Math.PI / 180)));
+            y1 = Math.abs(Math.trunc(y0 + radius * Math.sin(degree * Math.PI / 180)));
+            draw_line_bresenham(context, x0, y0, x1, y1, '#ffffff');
+        }
+    </script>
+
+    <script>
+        let canvas = document.getElementById('hw_01/02');
+        let ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#000000'
+        const x0 = 250;
+        const y0 = 250;
+        const R = 240;
+        draw_circle_bresenham(x0, y0, R);
+        setInterval(function () { rotation(ctx, x0, y0, R) }, 1000);
+    </script>
+</BODY>
+
+</HTML>
